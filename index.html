@@ -8,6 +8,7 @@
 
 		<script>
 			var TO_RADIANS = Math.PI/180;
+			var ROTATION_SPEED = 2;
 
 			var canvas = document.getElementById("gameCanvas");
 			canvas.width = window.innerWidth;
@@ -17,31 +18,111 @@
 
 			var sizeWidth = context.canvas.clientWidth;
 			var sizeHeight = context.canvas.clientHeight;
+			var aspectRatio = sizeWidth / sizeHeight;
 
 			var rotation = 0;
-			var rotateDirection = 1;
+			var activeKeys = [];
+
+			var score = 0;
+
+			var lastDrop = 0;
+			var blocks = [];
+
+			var halfHeight = (-.025 * aspectRatio) / 2 * sizeHeight;
+
+			var getSeeSawHeight = function(x, rot) {
+				return (0.7 * sizeHeight) - (Math.tan((rot) * TO_RADIANS) * (sizeWidth / 2 - (x)));
+			}
+
+			var setRotation = function(rot) {
+				if (rot > 30)
+					rot = 30;
+				else if (rot < -30)
+					rot = -30;
+
+				for (var i = 0; i < blocks.length; i++) {
+					var origHeight = getSeeSawHeight(blocks[i].x * sizeWidth, rotation);
+					if ((blocks[i].y * sizeHeight) - halfHeight >= origHeight) {
+						var newHeight = getSeeSawHeight(blocks[i].x * sizeWidth, rot);
+						blocks[i].y = blocks[i].y + ((newHeight - origHeight) / sizeHeight);
+					}
+				}
+
+				rotation = rot;
+			}
+			var update = function() {
+				var currentTime = new Date().getTime();
+
+				if (activeKeys[65]) {
+					if (rotation > -30)
+						setRotation(rotation - ROTATION_SPEED);
+				} else if (activeKeys[68]) {
+					if (rotation < 30)
+						setRotation(rotation + ROTATION_SPEED);
+				}
+
+				if (currentTime - lastDrop > 5000) {
+					var x = (Math.random() * 0.45) + 0.225;
+					console.log("Spawn Block: " + x);
+					blocks.push({ x: x, y: 0 });
+					lastDrop = currentTime;
+				}
+
+				for (var i = 0; i < blocks.length; i++ ) {
+					if ((blocks[i].y * sizeHeight) - halfHeight < getSeeSawHeight(blocks[i].x * sizeWidth, rotation))
+						blocks[i].y = blocks[i].y + 0.01;
+				}
+
+				draw();
+			}
+
+			var drawSeeSaw = function() {
+				context.save();
+				context.translate(.5 * sizeWidth, .7 * sizeHeight);
+				context.rotate(rotation * TO_RADIANS);
+				context.fillStyle = "#FF0000";
+				context.fillRect(-.25 * sizeWidth,.0,.5 * sizeWidth,.01 * sizeHeight);
+				context.beginPath();
+		        context.arc(0, 0, 5, 0, 2 * Math.PI, false);
+		        context.fillStyle = 'green';
+		        context.fill();
+				context.restore();
+			}
+
+			var drawBlock = function(block) {
+				context.save();
+				context.translate(block.x * sizeWidth, block.y * sizeHeight);
+				context.fillStyle = "#FF0000";
+				var height = (-.025 * aspectRatio);
+				context.fillRect(-.0125 * sizeWidth, -height / 2 * sizeHeight,.025 * sizeWidth, (-.025 * aspectRatio) * sizeHeight);
+				context.restore();
+			}
+
 			var draw = function() {
 				context.clearRect(0, 0, sizeWidth, sizeHeight);
 
 				context.font = "14px serif";
-  				context.fillText("rotation: " + rotation, 10, 50);
+  				context.fillText("Score: " + score, 10, 50);
 
-				context.save();
+				for (var i = 0; i < blocks.length; i++) {
+					drawBlock(blocks[i]);
+				}
 
-				context.translate(.5 * sizeWidth, .7 * sizeHeight);
-				//rotation = rotation + rotateDirection;
-				context.rotate(rotation * TO_RADIANS);
-				//if (Math.abs(rotation) > 30)
-				//    rotateDirection = (rotateDirection == 1) ? -1 : 1;
-
-				context.fillStyle = "#FF0000";
-				context.fillRect(-.1 * sizeWidth,0,.2 * sizeWidth,.01 * sizeHeight);
-
-				context.restore();
+				drawSeeSaw();
 			}
 
 			var tilt = function(x, y) {
-				rotation = x;
+				if (x === null) return;
+
+				setRotation(x);
+			}
+
+			var keyDown = function(event) {
+				activeKeys[event.which] = true;
+			}
+
+			var keyUp = function(event) {
+				activeKeys[event.which] = false;
 			}
 
 			if (window.DeviceOrientationEvent) {
@@ -57,7 +138,10 @@
 			        tilt(orientation.x * 50, orientation.y * 50);
 			    }, true);
 			}
-			setInterval(draw, 50);
+
+			window.addEventListener("keydown", keyDown);
+			window.addEventListener("keyup", keyUp);
+			setInterval(update, 50);
 		</script>
 	</body>
 </html>
