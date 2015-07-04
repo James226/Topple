@@ -60,7 +60,7 @@
 
 			var setRotation = function(rot) {
 				baseRotation = rot;
-				rot = rot + (weight * 10);
+				rot = rot + (weight * 100);
 				if (rot > 30)
 					rot = 30;
 				else if (rot < -30)
@@ -123,7 +123,7 @@
 				if (move) {
 					pos = pos + 0.01;
 					document.getElementById('gameCanvas').style.backgroundPosition = "0 " + (100 - pos) + "%";
-					seeSaw = seeSaw + 0.02;
+					seeSaw = seeSaw + 0.1;
 				}
 				draw();
 
