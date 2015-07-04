@@ -26,13 +26,14 @@
 			var score = 0;
 
 			var lastDrop = 0;
+			var lastTime = 0;
 			var blocks = [];
 
 			var boxHeight = 0.2;
 			var boxWidth = boxHeight / aspectRatio;
 
 			var blockSpawnRate = 5000;
-			var blockDropRate = 0.01;
+			var blockDropRate = 0.0001;
 
 			var halfHeight = -boxHeight / 2 * sizeHeight;
 
@@ -42,7 +43,6 @@
 
 			var blockColliding = function(block) {
 				var blockBottom = (block.y * sizeHeight) - halfHeight;
-				if (blockBottom >= getSeeSawHeight(block.x * sizeWidth, rotation)) return true;
 
 				for (var i = 0; i < blocks.length; i++) {
 					if (blocks[i] !== block &&
@@ -51,7 +51,7 @@
 						Math.abs(blocks[i].y - block.y) <= boxHeight)
 						return true;
 				}
-				return false;
+				return (blockBottom >= getSeeSawHeight(block.x * sizeWidth, rotation));
 			}
 
 			var setRotation = function(rot) {
@@ -75,6 +75,7 @@
 
 			var update = function() {
 				var currentTime = new Date().getTime();
+				var deltaTime = currentTime - lastTime;
 
 				if (activeKeys[65]) {
 					if (rotation > -30)
@@ -92,12 +93,14 @@
 
 				for (var i = 0; i < blocks.length; i++ ) {
 					if (!blockColliding(blocks[i]))
-						blocks[i].y = blocks[i].y + blockDropRate;
+						blocks[i].y = blocks[i].y + (blockDropRate * deltaTime);
 				}
 				pos = pos - 0.01;
 				document.getElementById('gameCanvas').style.backgroundPosition = "0 " + pos + "%";
 
 				draw();
+
+				lastTime = currentTime;
 			}
 
 			var drawSeeSaw = function() {
