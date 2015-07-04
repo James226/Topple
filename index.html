@@ -29,7 +29,7 @@
 			var lastTime = 0;
 			var blocks = [];
 
-			var boxHeight = 0.2;
+			var boxHeight = 0.1;
 			var boxWidth = boxHeight / aspectRatio;
 
 			var blockSpawnRate = 1500;
@@ -38,6 +38,8 @@
 			var halfHeight = -boxHeight / 2 * sizeHeight;
 			var seeSaw = 0.7;
 			var pos = 0;
+			var weight = 0;
+			var baseRotation = 0;
 
 			var getSeeSawHeight = function(x, rot) {
 				return (seeSaw * sizeHeight) - (Math.tan((rot) * TO_RADIANS) * (sizeWidth / 2 - (x)));
@@ -51,26 +53,37 @@
 						blocks[i].y > block.y &&
 						Math.abs(blocks[i].x - block.x) <= boxWidth &&
 						Math.abs(blocks[i].y - block.y) <= boxHeight)
-						return true;
+						return blocks[i];
 				}
-				return (blockBottom >= getSeeSawHeight(block.x * sizeWidth, rotation));
+				return (blockBottom >= getSeeSawHeight(block.x * sizeWidth, rotation)) ? "seesaw" : false;
 			}
 
 			var setRotation = function(rot) {
+				baseRotation = rot;
+				rot = rot + (weight * 10);
 				if (rot > 30)
 					rot = 30;
 				else if (rot < -30)
 					rot = -30;
 
 				for (var i = 0; i < blocks.length; i++) {
-					if (blockColliding(blocks[i])) {
-						var origHeight = getSeeSawHeight(blocks[i].x * sizeWidth, rotation);
-						var newHeight = getSeeSawHeight(blocks[i].x * sizeWidth, rot);
-						if (newHeight < origHeight)
-							blocks[i].y = blocks[i].y + ((newHeight - origHeight) / sizeHeight);
+					if (blocks[i].attachedBlock) {
+						if (blocks[i].attachedBlock == "seesaw") {
+							var newHeight = getSeeSawHeight(blocks[i].x * sizeWidth, rot);
+							//if (newHeight < origHeight) {
+								blocks[i].y = (newHeight / sizeHeight) - (boxHeight / 2);
+							//}
+						} else {
+							blocks[i].y = blocks[i].attachedBlock.y - boxHeight;
+						}
 					}
 				}
 				rotation = rot;
+			}
+
+			var setWeight = function(w) {
+				weight = w;
+				setRotation(baseRotation);
 			}
 
 			var update = function() {
@@ -78,11 +91,9 @@
 				var deltaTime = currentTime - lastTime;
 
 				if (activeKeys[65]) {
-					if (rotation > -30)
-						setRotation(rotation - ROTATION_SPEED);
+					setRotation(baseRotation - ROTATION_SPEED);
 				} else if (activeKeys[68]) {
-					if (rotation < 30)
-						setRotation(rotation + ROTATION_SPEED);
+					setRotation(baseRotation + ROTATION_SPEED);
 				}
 
 				if (currentTime - lastDrop > blockSpawnRate) {
@@ -93,14 +104,22 @@
 
 				var move = false;
 				for (var i = 0; i < blocks.length; i++ ) {
-					if (!blockColliding(blocks[i])) {
-						blocks[i].y = blocks[i].y + (blockDropRate * deltaTime);
-					} else {
-						if (blocks[i].y < 0.3) {
-							move = true;
+					if (!blocks[i].attachedBlock) {
+						var collision = blockColliding(blocks[i]);
+						if (!collision) {
+							blocks[i].y = blocks[i].y + (blockDropRate * deltaTime);
+						} else {
+							blocks[i].attachedBlock = collision;
+							if (blocks[i].y < 0.3) {
+								move = true;
+							}
+							weight = weight - (0.5 - blocks[i].x);
 						}
 					}
 				}
+				setWeight(weight);
+
+
 				if (move) {
 					pos = pos + 0.01;
 					document.getElementById('gameCanvas').style.backgroundPosition = "0 " + (100 - pos) + "%";
