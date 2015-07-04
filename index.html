@@ -28,10 +28,26 @@
 			var lastDrop = 0;
 			var blocks = [];
 
+			var boxWidth = 0.025;
+			var boxHeight = boxWidth * aspectRatio;
+
 			var halfHeight = (-.025 * aspectRatio) / 2 * sizeHeight;
 
 			var getSeeSawHeight = function(x, rot) {
 				return (0.7 * sizeHeight) - (Math.tan((rot) * TO_RADIANS) * (sizeWidth / 2 - (x)));
+			}
+
+			var blockColliding = function(block) {
+				var blockBottom = (block.y * sizeHeight) - halfHeight;
+				if (blockBottom >= getSeeSawHeight(block.x * sizeWidth, rotation)) return true;
+
+				for (var i = 0; i < blocks.length; i++) {
+					if (blocks[i] !== block &&
+						Math.abs(blocks[i].x - block.x) <= boxWidth &&
+						Math.abs(blocks[i].y - block.y) <= boxHeight)
+						return true;
+				}
+				return false;
 			}
 
 			var setRotation = function(rot) {
@@ -42,14 +58,14 @@
 
 				for (var i = 0; i < blocks.length; i++) {
 					var origHeight = getSeeSawHeight(blocks[i].x * sizeWidth, rotation);
-					if ((blocks[i].y * sizeHeight) - halfHeight >= origHeight) {
+					if (blockColliding(blocks[i])) {
 						var newHeight = getSeeSawHeight(blocks[i].x * sizeWidth, rot);
 						blocks[i].y = blocks[i].y + ((newHeight - origHeight) / sizeHeight);
 					}
 				}
-
 				rotation = rot;
 			}
+
 			var update = function() {
 				var currentTime = new Date().getTime();
 
@@ -69,7 +85,7 @@
 				}
 
 				for (var i = 0; i < blocks.length; i++ ) {
-					if ((blocks[i].y * sizeHeight) - halfHeight < getSeeSawHeight(blocks[i].x * sizeWidth, rotation))
+					if (!blockColliding(blocks[i]))
 						blocks[i].y = blocks[i].y + 0.01;
 				}
 
@@ -93,8 +109,7 @@
 				context.save();
 				context.translate(block.x * sizeWidth, block.y * sizeHeight);
 				context.fillStyle = "#FF0000";
-				var height = (-.025 * aspectRatio);
-				context.fillRect(-.0125 * sizeWidth, -height / 2 * sizeHeight,.025 * sizeWidth, (-.025 * aspectRatio) * sizeHeight);
+				context.fillRect(-.0125 * sizeWidth, (-boxHeight) / 2 * sizeHeight,.025 * sizeWidth, (boxHeight) * sizeHeight);
 				context.restore();
 			}
 
