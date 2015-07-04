@@ -28,10 +28,13 @@
 			var lastDrop = 0;
 			var blocks = [];
 
-			var boxWidth = 0.025;
-			var boxHeight = boxWidth * aspectRatio;
+			var boxHeight = 0.2;
+			var boxWidth = boxHeight / aspectRatio;
 
-			var halfHeight = (-.025 * aspectRatio) / 2 * sizeHeight;
+			var blockSpawnRate = 5000;
+			var blockDropRate = 0.01;
+
+			var halfHeight = -boxHeight / 2 * sizeHeight;
 
 			var getSeeSawHeight = function(x, rot) {
 				return (0.7 * sizeHeight) - (Math.tan((rot) * TO_RADIANS) * (sizeWidth / 2 - (x)));
@@ -43,6 +46,7 @@
 
 				for (var i = 0; i < blocks.length; i++) {
 					if (blocks[i] !== block &&
+						blocks[i].y > block.y &&
 						Math.abs(blocks[i].x - block.x) <= boxWidth &&
 						Math.abs(blocks[i].y - block.y) <= boxHeight)
 						return true;
@@ -57,14 +61,17 @@
 					rot = -30;
 
 				for (var i = 0; i < blocks.length; i++) {
-					var origHeight = getSeeSawHeight(blocks[i].x * sizeWidth, rotation);
 					if (blockColliding(blocks[i])) {
+						var origHeight = getSeeSawHeight(blocks[i].x * sizeWidth, rotation);
 						var newHeight = getSeeSawHeight(blocks[i].x * sizeWidth, rot);
-						blocks[i].y = blocks[i].y + ((newHeight - origHeight) / sizeHeight);
+						if (newHeight < origHeight)
+							blocks[i].y = blocks[i].y + ((newHeight - origHeight) / sizeHeight);
 					}
 				}
 				rotation = rot;
 			}
+
+			var pos = 100;
 
 			var update = function() {
 				var currentTime = new Date().getTime();
@@ -77,17 +84,18 @@
 						setRotation(rotation + ROTATION_SPEED);
 				}
 
-				if (currentTime - lastDrop > 5000) {
+				if (currentTime - lastDrop > blockSpawnRate) {
 					var x = (Math.random() * 0.45) + 0.225;
-					console.log("Spawn Block: " + x);
 					blocks.push({ x: x, y: 0 });
 					lastDrop = currentTime;
 				}
 
 				for (var i = 0; i < blocks.length; i++ ) {
 					if (!blockColliding(blocks[i]))
-						blocks[i].y = blocks[i].y + 0.01;
+						blocks[i].y = blocks[i].y + blockDropRate;
 				}
+				pos = pos - 0.01;
+				document.getElementById('gameCanvas').style.backgroundPosition = "0 " + pos + "%";
 
 				draw();
 			}
@@ -98,10 +106,6 @@
 				context.rotate(rotation * TO_RADIANS);
 				context.fillStyle = "#FF0000";
 				context.fillRect(-.25 * sizeWidth,.0,.5 * sizeWidth,.01 * sizeHeight);
-				context.beginPath();
-		        context.arc(0, 0, 5, 0, 2 * Math.PI, false);
-		        context.fillStyle = 'green';
-		        context.fill();
 				context.restore();
 			}
 
@@ -109,7 +113,7 @@
 				context.save();
 				context.translate(block.x * sizeWidth, block.y * sizeHeight);
 				context.fillStyle = "#FF0000";
-				context.fillRect(-.0125 * sizeWidth, (-boxHeight) / 2 * sizeHeight,.025 * sizeWidth, (boxHeight) * sizeHeight);
+				context.fillRect(-.0125 * sizeWidth, (-boxHeight) / 2 * sizeHeight, boxWidth * sizeWidth, (boxHeight) * sizeHeight);
 				context.restore();
 			}
 
@@ -128,7 +132,6 @@
 
 			var tilt = function(x, y) {
 				if (x === null) return;
-
 				setRotation(x);
 			}
 
