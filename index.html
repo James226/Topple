@@ -22,18 +22,40 @@
 			var rotateDirection = 1;
 			var draw = function() {
 				context.clearRect(0, 0, sizeWidth, sizeHeight);
+
+				context.font = "14px serif";
+  				context.fillText("rotation: " + rotation, 10, 50);
+
 				context.save();
 
 				context.translate(.5 * sizeWidth, .7 * sizeHeight);
-				rotation = rotation + rotateDirection;
-				console.log(rotation);
+				//rotation = rotation + rotateDirection;
 				context.rotate(rotation * TO_RADIANS);
-				if (Math.abs(rotation) > 30)
-				    rotateDirection = (rotateDirection == 1) ? -1 : 1;
+				//if (Math.abs(rotation) > 30)
+				//    rotateDirection = (rotateDirection == 1) ? -1 : 1;
 
 				context.fillStyle = "#FF0000";
 				context.fillRect(-.1 * sizeWidth,0,.2 * sizeWidth,.01 * sizeHeight);
+
 				context.restore();
+			}
+
+			var tilt = function(x, y) {
+				rotation = x;
+			}
+
+			if (window.DeviceOrientationEvent) {
+			    window.addEventListener("deviceorientation", function () {
+			        tilt(event.beta, event.gamma);
+			    }, true);
+			} else if (window.DeviceMotionEvent) {
+			    window.addEventListener('devicemotion', function () {
+			        tilt(event.acceleration.x * 2, event.acceleration.y * 2);
+			    }, true);
+			} else {
+			    window.addEventListener("MozOrientation", function () {
+			        tilt(orientation.x * 50, orientation.y * 50);
+			    }, true);
 			}
 			setInterval(draw, 50);
 		</script>
