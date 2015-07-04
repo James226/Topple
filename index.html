@@ -1,15 +1,41 @@
 <html>
 	<head>
+		<link href="css/game.css" type="text/css" rel="stylesheet" />
 	</head>
-	
+
 	<body>
-		<canvas id="myCanvas" width="200" height="100" style="border:1px solid #000000;"></canvas>
-		
+		<canvas id="gameCanvas"></canvas>
+
 		<script>
-			var c = document.getElementById("myCanvas");
-			var ctx = c.getContext("2d");
-			ctx.fillStyle = "#FF0000";
-			ctx.fillRect(0,0,150,75);
+			var TO_RADIANS = Math.PI/180;
+
+			var canvas = document.getElementById("gameCanvas");
+			canvas.width = window.innerWidth;
+			canvas.height = window.innerHeight;
+			var context = canvas.getContext("2d");
+
+
+			var sizeWidth = context.canvas.clientWidth;
+			var sizeHeight = context.canvas.clientHeight;
+
+			var rotation = 0;
+			var rotateDirection = 1;
+			var draw = function() {
+				context.clearRect(0, 0, sizeWidth, sizeHeight);
+				context.save();
+
+				context.translate(.5 * sizeWidth, .7 * sizeHeight);
+				rotation = rotation + rotateDirection;
+				console.log(rotation);
+				context.rotate(rotation * TO_RADIANS);
+				if (Math.abs(rotation) > 30)
+				    rotateDirection = (rotateDirection == 1) ? -1 : 1;
+
+				context.fillStyle = "#FF0000";
+				context.fillRect(-.1 * sizeWidth,0,.2 * sizeWidth,.01 * sizeHeight);
+				context.restore();
+			}
+			setInterval(draw, 50);
 		</script>
 	</body>
 </html>
