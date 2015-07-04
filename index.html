@@ -32,13 +32,15 @@
 			var boxHeight = 0.2;
 			var boxWidth = boxHeight / aspectRatio;
 
-			var blockSpawnRate = 5000;
-			var blockDropRate = 0.0001;
+			var blockSpawnRate = 1500;
+			var blockDropRate = 0.0002;
 
 			var halfHeight = -boxHeight / 2 * sizeHeight;
+			var seeSaw = 0.7;
+			var pos = 0;
 
 			var getSeeSawHeight = function(x, rot) {
-				return (0.7 * sizeHeight) - (Math.tan((rot) * TO_RADIANS) * (sizeWidth / 2 - (x)));
+				return (seeSaw * sizeHeight) - (Math.tan((rot) * TO_RADIANS) * (sizeWidth / 2 - (x)));
 			}
 
 			var blockColliding = function(block) {
@@ -71,8 +73,6 @@
 				rotation = rot;
 			}
 
-			var pos = 100;
-
 			var update = function() {
 				var currentTime = new Date().getTime();
 				var deltaTime = currentTime - lastTime;
@@ -87,17 +87,25 @@
 
 				if (currentTime - lastDrop > blockSpawnRate) {
 					var x = (Math.random() * 0.45) + 0.225;
-					blocks.push({ x: x, y: 0 });
+					blocks.push({ x: x, y: -0.2 });
 					lastDrop = currentTime;
 				}
 
+				var move = false;
 				for (var i = 0; i < blocks.length; i++ ) {
-					if (!blockColliding(blocks[i]))
+					if (!blockColliding(blocks[i])) {
 						blocks[i].y = blocks[i].y + (blockDropRate * deltaTime);
+					} else {
+						if (blocks[i].y < 0.3) {
+							move = true;
+						}
+					}
 				}
-				pos = pos - 0.01;
-				document.getElementById('gameCanvas').style.backgroundPosition = "0 " + pos + "%";
-
+				if (move) {
+					pos = pos + 0.01;
+					document.getElementById('gameCanvas').style.backgroundPosition = "0 " + (100 - pos) + "%";
+					seeSaw = seeSaw + 0.02;
+				}
 				draw();
 
 				lastTime = currentTime;
@@ -105,7 +113,7 @@
 
 			var drawSeeSaw = function() {
 				context.save();
-				context.translate(.5 * sizeWidth, .7 * sizeHeight);
+				context.translate(.5 * sizeWidth, seeSaw * sizeHeight);
 				context.rotate(rotation * TO_RADIANS);
 				context.fillStyle = "#FF0000";
 				context.fillRect(-.25 * sizeWidth,.0,.5 * sizeWidth,.01 * sizeHeight);
