@@ -125,7 +125,7 @@
 			}
 
 			var setRotation = function(rot) {
-				if (gameOver) rot = baseRotation;
+				if (gameOver) return;
 
 				baseRotation = rot;
 				weight = weight + (targetWeight - weight) / 10;
@@ -203,9 +203,9 @@
 					var min = 0.4;
 					var max = 0.6;
 					if (targetWeight > 0)
-						max = Math.max(min, max - targetWeight / blockWeight);
+						max = Math.max(min, max - (targetWeight / blockWeight / 4));
 					if (targetWeight < 0)
-						min = Math.min(max, min - targetWeight / blockWeight);
+						min = Math.min(max, min - (targetWeight / blockWeight / 4));
 					var x = (Math.random() * (max - min)) + min;
 					if (x > 0.5)
 						x = x + 0.1;
