@@ -55,6 +55,7 @@
 
 			var blockWeight = 100;
 			var gameOver = false;
+			navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
 
 			var seeSawTexture = new Image();
 			seeSawTexture.src = 'images/seesaw.png';
@@ -165,6 +166,9 @@
 								move = true;
 							}
 							w = w - ((0.5 - blocks[i].x) * blockWeight);
+							if (navigator.vibrate) {
+							    navigator.vibrate(100);
+							}
 						}
 					}
 				}
