@@ -43,6 +43,7 @@
 			var baseRotation = 0;
 
 			var blockWeight = 100;
+			var gameOver = false;
 
 			var seeSawTexture = new Image();
 			seeSawTexture.src = 'images/seesaw.png';
@@ -65,12 +66,17 @@
 			}
 
 			var setRotation = function(rot) {
+				if (gameOver) rot = baseRotation;
+
 				baseRotation = rot;
 				rot = rot + weight;
-				if (rot > 30)
+				if (rot > 30) {
+					gameOver = true;
 					rot = 30;
-				else if (rot < -30)
+				} else if (rot < -30) {
+					gameOver = true;
 					rot = -30;
+				}
 
 				for (var i = 0; i < blocks.length; i++) {
 					if (blocks[i].attachedBlock) {
@@ -121,6 +127,7 @@
 						if (!collision) {
 							blocks[i].y = blocks[i].y + (blockDropRate * deltaTime);
 						} else {
+							if (!gameOver) score++;
 							blocks[i].attachedBlock = collision;
 							if (blocks[i].y < 0.3) {
 								move = true;
@@ -132,7 +139,7 @@
 				setWeight(w);
 
 				if (move) {
-					pos = pos + 0.01;
+					pos = pos + 0.1;
 					document.getElementById('gameCanvas').style.backgroundPosition = "0 " + (100 - pos) + "%";
 					seeSaw = seeSaw + 0.1;
 				}
@@ -170,6 +177,8 @@
 
 				context.font = "14px serif";
   				context.fillText("Score: " + score, 10, 50);
+				if (gameOver)
+  					context.fillText("Game Over", 10, 70);
 
 				for (var i = 0; i < blocks.length; i++) {
 					drawBlock(blocks[i]);
