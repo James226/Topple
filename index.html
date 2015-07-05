@@ -55,30 +55,56 @@
 
 			var blockWeight = 100;
 			var gameOver = false;
+
+
+
 			navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
 
 			var seeSawTexture = new Image();
 			seeSawTexture.src = 'images/seesaw.png';
 
+			var fragileLimit = 2;
+			var lastBomb = new Date().getTime();
+			var blockTypes = {
+				Standard: 0,
+				Bomb: 1,
+				Fragile: 2
+			}
+
+			var blockTextures = {};
+			blockTextures[blockTypes.Standard] = new Image();
+			blockTextures[blockTypes.Standard].src = 'images/normalbox.png';
+			blockTextures[blockTypes.Bomb] = new Image();
+			blockTextures[blockTypes.Bomb].src = 'images/bombbox.png';
+			blockTextures[blockTypes.Fragile] = new Image();
+			blockTextures[blockTypes.Fragile].src = 'images/fragilebox.png';
+
+			var updateTimer;
+			var move;
 			var replay = function() {
-				console.log("Replay");
 				document.getElementById("menu-container").style.display = "none";
+				pos = 0;
+				document.getElementById('gameCanvas').style.backgroundPosition = "0 " + (100 - pos) + "%";
 				blocks = [];
 				seeSaw = 0.7;
 				targetWeight = 0;
 				weight = 0;
-				pos = 0;
 				baseRotation = 0;
 				score = 0;
-				lastTime = new Date();
+				lastTime = new Date().getTime();
 				lastDrop = 0;
 				gameOver = false;
+				updateTimer = setInterval(update, 50);
 			}
 
 			var setGameOver = function() {
 				gameOver = true;
+				if (navigator.vibrate) {
+					navigator.vibrate(500)
+				}
 				document.getElementById("score").innerText = score;
 				document.getElementById("menu-container").style.display = "table";
+				clearInterval(updateTimer);
 			}
 
 			var getSeeSawHeight = function(x, rot) {
@@ -102,6 +128,7 @@
 				if (gameOver) rot = baseRotation;
 
 				baseRotation = rot;
+				weight = weight + (targetWeight - weight) / 10;
 				rot = rot + weight;
 				if (rot > 30) {
 					setGameOver();
@@ -126,11 +153,43 @@
 
 			var setWeight = function(w) {
 				targetWeight = w;
-				weight = weight + (targetWeight - weight) / 10;
 				setRotation(baseRotation);
 			}
 
-			var update = function() {
+			var selectBlockType = function(currentTime) {
+				if (currentTime - lastBomb > 10000) {
+					lastBomb = currentTime;
+					return Math.random() > 0.5 ? blockTypes.Bomb : blockTypes.Fragile;
+				}
+				return blockTypes.Standard;
+			}
+
+			var onCollision = function(block, otherBlock) {
+				score++;
+				block.attachedBlock = otherBlock;
+				if (otherBlock.children)
+					otherBlock.children.push(block);
+				if (block.y < 0.3) {
+					move = true;
+				}
+				setWeight(targetWeight - ((0.5 - block.x) * blockWeight));
+
+				var blockHierarchy = [ block.attachedBlock ];
+				for (var i = 0; i < fragileLimit - 1; i++) {
+					if (!blockHierarchy[i].attachedBlock) break;
+					blockHierarchy[i + 1] = blockHierarchy[i].attachedBlock;
+				}
+				if (blockHierarchy.length === fragileLimit && blockHierarchy[fragileLimit - 1].type == blockTypes.Fragile) {
+					var fragileBox = blockHierarchy[fragileLimit - 1];
+					var index = blocks.indexOf(fragileBox);
+					blocks.splice(index, 1);
+					for (var i = 0; i < fragileBox.children.length; i++) {
+						fragileBox.children[i].attachedBlock = null;
+					}
+				}
+			}
+
+			var update = function(currentTime) {
 				var currentTime = new Date().getTime();
 				var deltaTime = currentTime - lastTime;
 
@@ -141,38 +200,34 @@
 				}
 
 				if (currentTime - lastDrop > blockSpawnRate) {
-					var min = 0.3;
-					var max = 0.7;
+					var min = 0.4;
+					var max = 0.6;
 					if (targetWeight > 0)
 						max = Math.max(min, max - targetWeight / blockWeight);
 					if (targetWeight < 0)
 						min = Math.min(max, min - targetWeight / blockWeight);
 					var x = (Math.random() * (max - min)) + min;
-					blocks.push({ x: x, y: -0.2 });
+					if (x > 0.5)
+						x = x + 0.1;
+					else
+						x = x - 0.1;
+					blocks.push({ x: x, y: -0.2, type: selectBlockType(currentTime), children: [] });
 					lastDrop = currentTime;
 				}
 
-				var move = false;
-				var w = targetWeight;
+				move = false;
 				for (var i = 0; i < blocks.length; i++ ) {
 					if (!blocks[i].attachedBlock) {
 						var collision = blockColliding(blocks[i]);
 						if (!collision) {
 							blocks[i].y = blocks[i].y + (blockDropRate * deltaTime);
 						} else {
-							if (!gameOver) score++;
-							blocks[i].attachedBlock = collision;
-							if (blocks[i].y < 0.3) {
-								move = true;
-							}
-							w = w - ((0.5 - blocks[i].x) * blockWeight);
-							if (navigator.vibrate) {
-							    navigator.vibrate(100);
-							}
+							onCollision(blocks[i], collision);
 						}
 					}
 				}
-				setWeight(w);
+
+				setRotation(baseRotation);
 
 				if (move) {
 					pos = pos + 0.1;
@@ -204,7 +259,7 @@
 				context.save();
 				context.translate(block.x * sizeWidth, block.y * sizeHeight);
 				context.fillStyle = "#FF0000";
-				context.fillRect(-.0125 * sizeWidth, (-boxHeight) / 2 * sizeHeight, boxWidth * sizeWidth, (boxHeight) * sizeHeight);
+				context.drawImage(blockTextures[block.type], -.0125 * sizeWidth, (-boxHeight) / 2 * sizeHeight, boxWidth * sizeWidth, (boxHeight) * sizeHeight);
 				context.restore();
 			}
 
@@ -251,7 +306,7 @@
 			window.addEventListener("keydown", keyDown);
 			window.addEventListener("keyup", keyUp);
 			document.getElementById("replay").addEventListener("click", replay);
-			setInterval(update, 50);
+			updateTimer = setInterval(update, 50);
 		</script>
 	</body>
 </html>
