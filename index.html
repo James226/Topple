@@ -63,6 +63,7 @@
 			var seeSawTexture = new Image();
 			seeSawTexture.src = 'images/seesaw.png';
 
+			var bombLimit = 3;
 			var fragileLimit = 2;
 			var lastBomb = new Date().getTime();
 			var blockTypes = {
@@ -164,8 +165,32 @@
 				return blockTypes.Standard;
 			}
 
+			var removeBlock = function(block) {
+				var index = blocks.indexOf(block);
+				blocks.splice(index, 1);
+				for (var i = 0; i < block.children.length; i++) {
+					block.children[i].attachedBlock = null;
+				}
+				setWeight(targetWeight + ((0.5 - block.x) * blockWeight));
+			}
+
 			var onCollision = function(block, otherBlock) {
 				score++;
+
+				if (block.type === blockTypes.Bomb) {
+					var nextBlock = otherBlock;
+					for (var i = 0; i < bombLimit - 1; i++) {
+						if (!nextBlock || nextBlock === "seesaw") break;
+						var currentBlock = nextBlock;
+						nextBlock = nextBlock.attachedBlock;
+
+						removeBlock(currentBlock);
+					}
+
+					removeBlock(block);
+					return;
+				}
+
 				block.attachedBlock = otherBlock;
 				if (otherBlock.children)
 					otherBlock.children.push(block);
@@ -180,12 +205,7 @@
 					blockHierarchy[i + 1] = blockHierarchy[i].attachedBlock;
 				}
 				if (blockHierarchy.length === fragileLimit && blockHierarchy[fragileLimit - 1].type == blockTypes.Fragile) {
-					var fragileBox = blockHierarchy[fragileLimit - 1];
-					var index = blocks.indexOf(fragileBox);
-					blocks.splice(index, 1);
-					for (var i = 0; i < fragileBox.children.length; i++) {
-						fragileBox.children[i].attachedBlock = null;
-					}
+					removeBlock(blockHierarchy[fragileLimit - 1]);
 				}
 			}
 
@@ -200,17 +220,17 @@
 				}
 
 				if (currentTime - lastDrop > blockSpawnRate) {
-					var min = 0.4;
-					var max = 0.6;
+					var min = 0.35;
+					var max = 0.65;
 					if (targetWeight > 0)
 						max = Math.max(min, max - (targetWeight / blockWeight / 4));
 					if (targetWeight < 0)
 						min = Math.min(max, min - (targetWeight / blockWeight / 4));
 					var x = (Math.random() * (max - min)) + min;
 					if (x > 0.5)
-						x = x + 0.1;
+						x = x + 0.05;
 					else
-						x = x - 0.1;
+						x = x - 0.05;
 					blocks.push({ x: x, y: -0.2, type: selectBlockType(currentTime), children: [] });
 					lastDrop = currentTime;
 				}
