@@ -42,6 +42,8 @@
 			var targetWeight = 0;
 			var baseRotation = 0;
 
+			var blockWeight = 100;
+
 			var seeSawTexture = new Image();
 			seeSawTexture.src = 'images/seesaw.png';
 
@@ -64,7 +66,7 @@
 
 			var setRotation = function(rot) {
 				baseRotation = rot;
-				rot = rot + (weight * 100);
+				rot = rot + weight;
 				if (rot > 30)
 					rot = 30;
 				else if (rot < -30)
@@ -85,7 +87,7 @@
 
 			var setWeight = function(w) {
 				targetWeight = w;
-				weight = weight + (targetWeight - weight) / 100;
+				weight = weight + (targetWeight - weight) / 10;
 				setRotation(baseRotation);
 			}
 
@@ -103,9 +105,9 @@
 					var min = 0.3;
 					var max = 0.7;
 					if (targetWeight > 0)
-						max = Math.max(min, max - targetWeight);
+						max = Math.max(min, max - targetWeight / blockWeight);
 					if (targetWeight < 0)
-						min = Math.min(max, min - targetWeight);
+						min = Math.min(max, min - targetWeight / blockWeight);
 					var x = (Math.random() * (max - min)) + min;
 					blocks.push({ x: x, y: -0.2 });
 					lastDrop = currentTime;
@@ -123,7 +125,7 @@
 							if (blocks[i].y < 0.3) {
 								move = true;
 							}
-							w = w - (0.5 - blocks[i].x);
+							w = w - ((0.5 - blocks[i].x) * blockWeight);
 						}
 					}
 				}
@@ -145,6 +147,13 @@
 				context.rotate(rotation * TO_RADIANS);
 				context.fillStyle = "#FF0000";
 				context.drawImage(seeSawTexture, -.25 * sizeWidth,.0,.5 * sizeWidth,.02 * sizeHeight);
+				context.restore();
+
+				context.save();
+				context.translate(0.9 * sizeWidth, 0.1 * sizeHeight);
+				context.rotate(rotation * TO_RADIANS);
+				context.fillStyle = "#FF0000";
+				context.drawImage(seeSawTexture, -.05 * sizeWidth,.0,.1 * sizeWidth,.01 * sizeHeight);
 				context.restore();
 			}
 
