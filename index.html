@@ -4,7 +4,18 @@
 	</head>
 
 	<body>
-		<canvas id="gameCanvas"></canvas>
+		<div id="container">
+			<canvas id="gameCanvas"></canvas>
+			<div id="menu-container">
+				<div id="menu">
+					<div id="splash">
+						<h2>Game Over</h2>
+						<p>Score: <span id="score">0</span></p>
+						<button id="replay" type="button">Play Again</button>
+					</div>
+				</div>
+			</div>
+		</div>
 
 		<script>
 			var TO_RADIANS = Math.PI/180;
@@ -26,7 +37,7 @@
 			var score = 0;
 
 			var lastDrop = 0;
-			var lastTime = 0;
+			var lastTime = new Date();
 			var blocks = [];
 
 			var boxHeight = 0.1;
@@ -47,6 +58,27 @@
 
 			var seeSawTexture = new Image();
 			seeSawTexture.src = 'images/seesaw.png';
+
+			var replay = function() {
+				console.log("Replay");
+				document.getElementById("menu-container").style.display = "none";
+				blocks = [];
+				seeSaw = 0.7;
+				targetWeight = 0;
+				weight = 0;
+				pos = 0;
+				baseRotation = 0;
+				score = 0;
+				lastTime = new Date();
+				lastDrop = 0;
+				gameOver = false;
+			}
+
+			var setGameOver = function() {
+				gameOver = true;
+				document.getElementById("score").innerText = score;
+				document.getElementById("menu-container").style.display = "table";
+			}
 
 			var getSeeSawHeight = function(x, rot) {
 				return (seeSaw * sizeHeight) - (Math.tan((rot) * TO_RADIANS) * (sizeWidth / 2 - (x)));
@@ -71,10 +103,10 @@
 				baseRotation = rot;
 				rot = rot + weight;
 				if (rot > 30) {
-					gameOver = true;
+					setGameOver();
 					rot = 30;
 				} else if (rot < -30) {
-					gameOver = true;
+					setGameOver();
 					rot = -30;
 				}
 
@@ -175,10 +207,8 @@
 			var draw = function() {
 				context.clearRect(0, 0, sizeWidth, sizeHeight);
 
-				context.font = "14px serif";
+				context.font = "48px serif";
   				context.fillText("Score: " + score, 10, 50);
-				if (gameOver)
-  					context.fillText("Game Over", 10, 70);
 
 				for (var i = 0; i < blocks.length; i++) {
 					drawBlock(blocks[i]);
@@ -216,6 +246,7 @@
 
 			window.addEventListener("keydown", keyDown);
 			window.addEventListener("keyup", keyUp);
+			document.getElementById("replay").addEventListener("click", replay);
 			setInterval(update, 50);
 		</script>
 	</body>
