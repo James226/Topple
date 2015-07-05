@@ -39,7 +39,11 @@
 			var seeSaw = 0.7;
 			var pos = 0;
 			var weight = 0;
+			var targetWeight = 0;
 			var baseRotation = 0;
+
+			var seeSawTexture = new Image();
+			seeSawTexture.src = 'images/seesaw.png';
 
 			var getSeeSawHeight = function(x, rot) {
 				return (seeSaw * sizeHeight) - (Math.tan((rot) * TO_RADIANS) * (sizeWidth / 2 - (x)));
@@ -70,9 +74,7 @@
 					if (blocks[i].attachedBlock) {
 						if (blocks[i].attachedBlock == "seesaw") {
 							var newHeight = getSeeSawHeight(blocks[i].x * sizeWidth, rot);
-							//if (newHeight < origHeight) {
-								blocks[i].y = (newHeight / sizeHeight) - (boxHeight / 2);
-							//}
+							blocks[i].y = (newHeight / sizeHeight) - (boxHeight / 2);
 						} else {
 							blocks[i].y = blocks[i].attachedBlock.y - boxHeight;
 						}
@@ -82,7 +84,8 @@
 			}
 
 			var setWeight = function(w) {
-				weight = w;
+				targetWeight = w;
+				weight = weight + (targetWeight - weight) / 100;
 				setRotation(baseRotation);
 			}
 
@@ -97,12 +100,19 @@
 				}
 
 				if (currentTime - lastDrop > blockSpawnRate) {
-					var x = (Math.random() * 0.45) + 0.225;
+					var min = 0.3;
+					var max = 0.7;
+					if (targetWeight > 0)
+						max = Math.max(min, max - targetWeight);
+					if (targetWeight < 0)
+						min = Math.min(max, min - targetWeight);
+					var x = (Math.random() * (max - min)) + min;
 					blocks.push({ x: x, y: -0.2 });
 					lastDrop = currentTime;
 				}
 
 				var move = false;
+				var w = targetWeight;
 				for (var i = 0; i < blocks.length; i++ ) {
 					if (!blocks[i].attachedBlock) {
 						var collision = blockColliding(blocks[i]);
@@ -113,12 +123,11 @@
 							if (blocks[i].y < 0.3) {
 								move = true;
 							}
-							weight = weight - (0.5 - blocks[i].x);
+							w = w - (0.5 - blocks[i].x);
 						}
 					}
 				}
-				setWeight(weight);
-
+				setWeight(w);
 
 				if (move) {
 					pos = pos + 0.01;
@@ -135,7 +144,7 @@
 				context.translate(.5 * sizeWidth, seeSaw * sizeHeight);
 				context.rotate(rotation * TO_RADIANS);
 				context.fillStyle = "#FF0000";
-				context.fillRect(-.25 * sizeWidth,.0,.5 * sizeWidth,.01 * sizeHeight);
+				context.drawImage(seeSawTexture, -.25 * sizeWidth,.0,.5 * sizeWidth,.02 * sizeHeight);
 				context.restore();
 			}
 
